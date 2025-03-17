@@ -44,7 +44,17 @@ public class HomePage {
         return actions.getText(Locators.SUB_MENU_HEADING).trim();
     }
 
-    public boolean isVideoGameHeadingPresent() {
-        return actions.isElementPresent(Locators.VIDEO_GAME_HEADING);
+    public String getPageBanner() {
+        return actions.getText(Locators.VIDEO_GAME_HEADING);
+    }
+
+    public void navigateToHomePage()
+    {
+        actions.click(Locators.HOME_PAGE_LINK);
+    }
+
+    public void navigateToMyAccountSetting()
+    {
+        actions.click(Locators.ACCOUNT_SETTINGS);
     }
 }

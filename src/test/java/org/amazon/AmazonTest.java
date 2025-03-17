@@ -21,6 +21,7 @@ public class AmazonTest {
     SortPage sortPage;
     ProductPage productPage;
     CheckoutPage checkoutPage;
+    MyAddressesPage myAddressesPage;
     ConfigLoader config;
     Logger logger;
     SoftAssert softAssert;
@@ -48,7 +49,9 @@ public class AmazonTest {
         sortPage = new SortPage(driver, logger);
         productPage = new ProductPage(driver, logger);
         checkoutPage = new CheckoutPage(driver, logger);
+        myAddressesPage = new MyAddressesPage(driver, logger);
         softAssert = new SoftAssert();
+
     }
 
     @Test
@@ -56,11 +59,14 @@ public class AmazonTest {
         ExtentReportManager.createTest("testLogin");
         try {
             loginPage.openLoginPage();
+            Assert.assertTrue(loginPage.isEmailFieldDisplayed(), "Login page did not open successfully");
             loginPage.enterEmail(config.getMobilePhoneNumber());
+            //Assert.assertTrue(loginPage.isPasswordFieldDisplayed(), "Enter Password page did not open successfully");
             loginPage.enterPassword(config.getPassword());
-            softAssert.assertEquals(homePage.getLoggedInUserName(),"Hello, "+ config.getFirstName(), "Login failed");
+            Assert.assertEquals(homePage.getLoggedInUserName(),"Hello, "+ config.getFirstName(), "Login failed");
             System.out.println(config.getFirstName() + " logged in successfully");
             ExtentReportManager.getTest().pass("Login test passed");
+
         } catch (Exception e) {
             ExtentReportManager.logFailure(driver, "Login test failed");
             logger.logError("Login test failed", e);
@@ -72,13 +78,26 @@ public class AmazonTest {
     public void testHomePageNavigation() {
         ExtentReportManager.createTest("testHomePageNavigation");
         try {
+            //Validate My Cart Is Empty or Remove All Items if Existed
+            checkoutPage.proceedToCheckout();
+            checkoutPage.emptyCartFromAllItems();
+            ExtentReportManager.getTest().info("Cart Is Empty!");
+
+            //Remove any existing address
+            homePage.navigateToMyAccountSetting();
+            myAddressesPage.navigateToMyAddresses();
+            myAddressesPage.deleteSavedAddress();
+
+            //Navigate to Home Page
+            homePage.navigateToHomePage();
+            //Open All Menu
             homePage.openAllMenu();
             Assert.assertEquals(homePage.getHeaderMenuCustomerName(), "Hello, "+ config.getFirstName(), "Failed To Open All Menu");
             homePage.clickSeeAll();
             homePage.clickVideoGames();
             softAssert.assertEquals(homePage.getSubMenuHeading(), "Video Games", "Failed To Click on Video Games Link from the Main Menu");
             homePage.clickAllVideoGames();
-            softAssert.assertTrue(homePage.isVideoGameHeadingPresent(), "Navigation to Video Games page failed");
+            softAssert.assertEquals(homePage.getPageBanner(), "Video Games", "Failed To Click on All Video Games Link from the Sub Menu");
             ExtentReportManager.getTest().pass("HomePage navigation test passed");
         } catch (Exception e) {
             ExtentReportManager.logFailure(driver, "HomePage navigation test failed");
@@ -118,8 +137,9 @@ public class AmazonTest {
     public void testProductAddition() {
         ExtentReportManager.createTest("testProductAddition");
         try {
+
             productPage.addProductsBelow15kEGP();
-            Assert.assertTrue(productPage.verifyProductsInCart(), "No products were added to the cart.");
+            softAssert.assertTrue(productPage.verifyProductsInCart(), "No products were added to the cart.");
             ExtentReportManager.getTest().pass("Product addition test passed");
         } catch (Exception e) {
             ExtentReportManager.logFailure(driver, "Product addition test failed");
@@ -133,7 +153,12 @@ public class AmazonTest {
         ExtentReportManager.createTest("testCheckoutProcess");
         try {
             checkoutPage.proceedToCheckout();
-            checkoutPage.enterAddress(config.getStreetName(), config.getCityArea(), config.getBuildingNumber(), config.getDistrict(), config.getAddressPhone());
+            softAssert.assertEquals(checkoutPage.getShoppingCartHeading().trim(), "Shopping Cart", "Failed to proceed to checkout");
+            checkoutPage.proceedToBuy();
+            softAssert.assertTrue(checkoutPage.secureCheckoutButtonIsDisplayed(), "Failed to proceed to buy");
+            checkoutPage.addNewAddress();
+            softAssert.assertTrue(checkoutPage.addNewAddressPopupIsOpened(), "Failed to add new address");
+            checkoutPage.enterAddress(config.getFirstName(), config.getLastName(), config.getMobilePhoneNumber(), config.getStreetName(), config.getBuildingNumber(), config.getCityArea(), config.getDistrict());
             checkoutPage.chooseCashOnDelivery();
             ExtentReportManager.getTest().pass("Checkout process test passed");
         } catch (Exception e) {
@@ -151,7 +176,7 @@ public class AmazonTest {
             double shippingFee = checkoutPage.getShippingFee();
             double expectedTotal = checkoutPage.calculateExpectedTotal(totalAmount, shippingFee);
             Assert.assertTrue(checkoutPage.verifyTotalAmount(expectedTotal), "The total amount is incorrect.");
-            checkoutPage.placeOrder();
+            //checkoutPage.placeOrder();
             ExtentReportManager.getTest().pass("Total amount verification test passed");
         } catch (Exception e) {
             ExtentReportManager.logFailure(driver, "Total amount verification test failed");

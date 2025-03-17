@@ -27,4 +27,11 @@ public class LoginPage {
         actions.type(Locators.PASSWORD_FIELD, password);
         actions.click(Locators.SUBMIT_BUTTON);
     }
+    public boolean isEmailFieldDisplayed() {
+        return actions.isElementPresent(Locators.EMAIL_FIELD);
+    }
+
+    public boolean isPasswordFieldDisplayed() {
+        return actions.isElementPresent(Locators.PASSWORD_FIELD);
+    }
 }

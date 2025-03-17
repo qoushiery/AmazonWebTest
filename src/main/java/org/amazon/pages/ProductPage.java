@@ -23,12 +23,15 @@ public class ProductPage {
     public void addProductsBelow15kEGP() {
         boolean productsFound = false;
         do {
+            actions.waitForPageToLoad();
             List<WebElement> prices = actions.findElements(Locators.PRODUCT_PRICE);
             logger.log("Found " + prices.size() + " products on the page.");
             for (WebElement price : prices) {
-                System.out.println(price.getText());
-            }
-            for (WebElement price : prices) {
+                if (!price.isDisplayed()) {
+                    logger.log("Price element is not displayed, skipping this item.");
+                    continue;
+                }
+
                 String priceText = price.getText().replace(",", "");
                 int priceValue;
 
@@ -43,29 +46,28 @@ public class ProductPage {
 
                 if (priceValue < 15000) {
                     try {
-                        WebElement productContainer = price.findElement(By.xpath("ancestor::div[@data-asin]"));
-                        WebElement addToCartButton = productContainer.findElement(By.xpath(".//input[contains(@name, 'addToCart')]"));                        if (addToCartButton.isDisplayed()) {
+                        WebElement productContainer = price.findElement(By.xpath("ancestor::div[@role='listitem']"));
+                        WebElement addToCartButton = productContainer.findElement(By.xpath(".//button[@name='submit.addToCart']"));
+                        if (addToCartButton.isDisplayed()) {
                             actions.scrollToElementAndClickUsingJavaScript(addToCartButton);
                             productsFound = true;
                             logger.log("Added product with price: " + priceText + " to cart.");
-                        }
-                        else {
+                        } else {
                             logger.log("Add to Cart button is not displayed for product with price: " + priceText);
                         }
                     } catch (NoSuchElementException e) {
                         logger.logError("Add to Cart button not found for product with price: " + priceText);
                     }
                 }
-                }
-                if (!productsFound && actions.isElementPresent(Locators.NEXT_PAGE_BUTTON)) {
-                    logger.log("Navigating to the next page.");
-                    actions.click(Locators.NEXT_PAGE_BUTTON);
-                } else {
-                    break;
-                }
             }
-            while (!productsFound) ;
-        }
+            if (!productsFound && actions.isElementPresent(Locators.NEXT_PAGE_BUTTON)) {
+                logger.log("Navigating to the next page.");
+                actions.scrollToElementAndClickUsingJavaScript(Locators.NEXT_PAGE_BUTTON);
+            } else {
+                break;
+            }
+        } while (!productsFound);
+    }
     public boolean verifyProductsInCart() {
         String cartCountText = actions.findElement(Locators.CART_ITEM_COUNT).getText();
         return Integer.parseInt(cartCountText) > 0;

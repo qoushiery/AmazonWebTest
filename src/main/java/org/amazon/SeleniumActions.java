@@ -51,6 +51,16 @@ public class SeleniumActions {
         }
     }
 
+    public void clickUsingJavaScript(WebElement webElement) {
+        try {
+            WebElement element = wait.until(ExpectedConditions.elementToBeClickable(webElement));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+            logger.log("Clicked on element with locator: " + webElement + " using JavaScript.");
+        } catch (Exception e) {
+            logger.logError("Failed to click on element with locator: " + webElement + " using JavaScript.", e);
+        }
+    }
+
     public void scrollToElementAndClickUsingJavaScript(By locator) {
         try {
             WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
@@ -182,6 +192,16 @@ public class SeleniumActions {
             logger.log("Selected index '" + index + "' in element with locator: " + locator);
         } catch (Exception e) {
             logger.logError("Failed to select index '" + index + "' in element with locator: " + locator, e);
+        }
+    }
+
+    public void waitForPageToLoad() {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+            wait.until(webDriver -> ((JavascriptExecutor) webDriver).executeScript("return document.readyState").equals("complete"));
+            logger.log("Page has fully loaded.");
+        } catch (Exception e) {
+            logger.logError("Failed to wait for the page to load.", e);
         }
     }
 }
